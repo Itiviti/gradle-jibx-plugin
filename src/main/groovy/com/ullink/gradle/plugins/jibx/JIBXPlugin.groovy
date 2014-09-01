@@ -11,20 +11,23 @@ class JIBXPlugin implements Plugin<Project> {
 
         project.extensions.create("JIBXBinding", JIBXPluginExtension)
 
-
-        project.JIBXBinding.bindingDir = new File(project.buildDir,JIBXPluginExtension.DEFAULT_BINDING_DIR)
-        def tempClassFolder = new File(project.JIBXBinding.bindingDir,project.JIBXBinding.tempBuildFolderName)
+        //force cleanup since incremental build on this plugin is not yet working well
+        project.sourceSets.main.output.classesDir.deleteDir();
 
         project.task('JIBXResources') << {
+            project.JIBXBinding.bindingDir = new File(project.buildDir,JIBXPluginExtension.DEFAULT_BINDING_DIR)
+            project.JIBXBinding.tempClassFolder = new File(project.JIBXBinding.bindingDir,JIBXPluginExtension.TEMP_TARGET_DIR)
             project.JIBXBinding.bindingDir.mkdirs()
-            tempClassFolder.mkdirs()
-            def jibxDir = new File(tempClassFolder,project.JIBXBinding.rootAPIPath+'/jibx')
+            if (project.JIBXBinding.tempClassFolder.exists()) {
+                project.JIBXBinding.tempClassFolder.deleteDir()
+            }
+            project.JIBXBinding.tempClassFolder.mkdirs()
+            def jibxDir = new File(project.JIBXBinding.tempClassFolder,project.JIBXBinding.rootAPIPath+'/jibx')
             jibxDir.mkdirs()
 
         }
 
         project.task('prepareJIBX').dependsOn('compileJava','JIBXResources') << {
-
             //copying binding configuration
             project.copy {
                 from project.sourceSets.main.allSource
@@ -39,14 +42,14 @@ class JIBXPlugin implements Plugin<Project> {
             //copying binding dependencies
             project.copy {
                 from project.configurations.jibxBindingReference.files.collect{project.zipTree(it)}
-                into tempClassFolder
+                into project.JIBXBinding.tempClassFolder
                 include '**/*.*'
             }
 
             //copying classes to bind
             project.copy {
                 from project.sourceSets.main.output.files
-                into tempClassFolder
+                into project.JIBXBinding.tempClassFolder
                 include '**/*.*'
             }
 
@@ -62,20 +65,23 @@ class JIBXPlugin implements Plugin<Project> {
                 if (project.JIBXBinding.verify) {
                     argList +="-b"
                 }
-                if (project.JIBXBinding.over) {
+                if (project.JIBXBinding.overrideErrors) {
                     argList +="-o"
                 }
-                if (project.JIBXBinding.skip) {
+                if (project.JIBXBinding.skipBindValidation) {
                     argList +="-s"
                 }
-                if (project.JIBXBinding.track) {
+                if (project.JIBXBinding.trackBranches) {
                     argList +="-t"
+                }
+                if (project.JIBXBinding.testLoading) {
+                    argList +="-l"
                 }
                 argList.addAll(project.JIBXBinding.bindingFiles)
                 main = 'org.jibx.binding.Compile'
                 args = argList
                 debug = false
-                classpath = project.configurations.jibxRuntime.asFileTree + project.files(tempClassFolder)
+                classpath = project.configurations.jibxRuntime.asFileTree + project.files(project.JIBXBinding.tempClassFolder)
                 jvmArgs = project.JIBXBinding.jibxTaskJvmArgs
             }
         }
@@ -84,7 +90,7 @@ class JIBXPlugin implements Plugin<Project> {
         project.task('postJIBX').dependsOn('runJIBX') << {
             //copy instrumented classes back to output dir
             project.copy {
-                from tempClassFolder
+                from project.JIBXBinding.tempClassFolder
                 into project.sourceSets.main.output.classesDir
                 include project.JIBXBinding.rootAPIPath+'/**/*.*'
             }
