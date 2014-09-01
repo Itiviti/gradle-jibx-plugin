@@ -52,12 +52,31 @@ class JIBXPlugin implements Plugin<Project> {
 
 
         }
-        def runJIBX = project.task('runJIBX').dependsOn('prepareJIBX') << {
+        project.task('runJIBX').dependsOn('prepareJIBX') << {
             project.javaexec {
+                //compute arguments
+                ArrayList<String> argList = new ArrayList<>();
+                if (project.JIBXBinding.verbose) {
+                    argList +="-v"
+                }
+                if (project.JIBXBinding.verify) {
+                    argList +="-b"
+                }
+                if (project.JIBXBinding.over) {
+                    argList +="-o"
+                }
+                if (project.JIBXBinding.skip) {
+                    argList +="-s"
+                }
+                if (project.JIBXBinding.track) {
+                    argList +="-t"
+                }
+                argList.addAll(project.JIBXBinding.bindingFiles)
                 main = 'org.jibx.binding.Compile'
-                args = project.JIBXBinding.bindingFiles
+                args = argList
                 debug = false
                 classpath = project.configurations.jibxRuntime.asFileTree + project.files(tempClassFolder)
+                jvmArgs = project.JIBXBinding.jibxTaskJvmArgs
             }
         }
 

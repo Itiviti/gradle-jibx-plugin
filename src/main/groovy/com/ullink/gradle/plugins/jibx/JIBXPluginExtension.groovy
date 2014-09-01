@@ -8,8 +8,14 @@ class JIBXPluginExtension {
 
     static final String DEFAULT_BINDING_DIR = 'bindings'
 
-    def String rootAPIPath ='undefined'
+    def String rootAPIPath = 'undefined'
     def String tempBuildFolderName = 'tmp'
     def List<String> bindingFiles = []
     def File bindingDir
+    def List<String> jibxTaskJvmArgs =[]
+    def boolean verbose = false
+    def boolean verify = false
+    def boolean over = false
+    def boolean skip = false
+    def boolean track = false
 }
