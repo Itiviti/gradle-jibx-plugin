@@ -66,7 +66,7 @@ class JIBXPlugin implements Plugin<Project> {
             //copy instrumented classes back to output dir
             project.copy {
                 from tempClassFolder
-                into project.sourceSets.main.output.classesDir;
+                into project.sourceSets.main.output.classesDir
                 include project.JIBXBinding.rootAPIPath+'/**/*.*'
             }
         }

@@ -8,8 +8,8 @@ class JIBXPluginExtension {
 
     static final String DEFAULT_BINDING_DIR = 'bindings'
 
-    def String rootAPIPath ='undefined';
-    def String tempBuildFolderName = 'tmp';
-    def List<String> bindingFiles = [];
+    def String rootAPIPath ='undefined'
+    def String tempBuildFolderName = 'tmp'
+    def List<String> bindingFiles = []
     def File bindingDir
 }
