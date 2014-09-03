@@ -54,13 +54,13 @@ class JIBXPlugin implements Plugin<Project> {
             }
 
             project.JIBXBinding.JIBXExternalJars.each {
-                jar,path ->
-                    def pathBinding = new File(project.JIBXBinding.bindingDir,'path')
+                path,jar ->
+                    def pathBinding = new File(project.JIBXBinding.bindingDir,path)
                     pathBinding.mkdirs();
                     project.copy {
-                        from project.configurations.jibxRuntime.files.findAll{it.name.matches(".*$jar.*")}.collect{project.zipTree(it).findAll{it.absolutePath.toString().matches('.*resources.*\\.xml')}}
+                        from project.configurations.jibxRuntime.files.findAll{it.name.matches(".*$jar.*")}.collect{project.zipTree(it)}.files
                         into pathBinding;
-                        include '**/*.*'
+                        include '**/*.xml'
                     }
             }
 
