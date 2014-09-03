@@ -16,4 +16,11 @@ class JIBXPluginExtension {
     def boolean skipBindValidation = false
     def boolean trackBranches = false
     def boolean testLoading = false
+
+    def Map<String, String> JIBXExternalJars = new HashMap<>();
+
+    void externalDependencyMapping(String jarName, String refId) {
+        JIBXExternalJars.put(refId,jarName);
+    }
+
 }
