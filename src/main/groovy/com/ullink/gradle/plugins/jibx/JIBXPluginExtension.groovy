@@ -16,6 +16,8 @@ class JIBXPluginExtension {
     def boolean skipBindValidation = false
     def boolean trackBranches = false
     def boolean testLoading = false
+    def boolean generateUnbindedJar = false
+    def String unbindedJarName = null
 
     def Map<String, String> JIBXExternalJars = new HashMap<>();
 
