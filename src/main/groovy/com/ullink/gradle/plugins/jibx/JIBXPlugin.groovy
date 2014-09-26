@@ -2,6 +2,8 @@ package com.ullink.gradle.plugins.jibx
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.bundling.Jar
 
 class JIBXPlugin implements Plugin<Project> {
@@ -18,9 +20,10 @@ class JIBXPlugin implements Plugin<Project> {
         project.configure(project) {
             afterEvaluate {
 
+                project.JIBXBinding.bindingDir = new File(project.buildDir,JIBXPluginExtension.DEFAULT_BINDING_DIR)
+                project.JIBXBinding.tempClassFolder = new File(project.JIBXBinding.bindingDir,JIBXPluginExtension.TEMP_TARGET_DIR)
+
                 project.task('JIBXResources') << {
-                    project.JIBXBinding.bindingDir = new File(project.buildDir,JIBXPluginExtension.DEFAULT_BINDING_DIR)
-                    project.JIBXBinding.tempClassFolder = new File(project.JIBXBinding.bindingDir,JIBXPluginExtension.TEMP_TARGET_DIR)
                     project.JIBXBinding.bindingDir.mkdirs()
                     if (project.JIBXBinding.tempClassFolder.exists()) {
                         project.JIBXBinding.tempClassFolder.deleteDir()
@@ -68,57 +71,52 @@ class JIBXPlugin implements Plugin<Project> {
 
                 }
 
-                project.task('runJIBX').dependsOn('prepareJIBX','generateUnbindedJar') << {
-                    project.javaexec {
-                        //compute arguments
-                        ArrayList<String> argList = new ArrayList<>();
-                        if (project.JIBXBinding.verbose) {
-                            argList +="-v"
-                        }
-                        if (project.JIBXBinding.verify) {
-                            argList +="-b"
-                        }
-                        if (project.JIBXBinding.overrideErrors) {
-                            argList +="-o"
-                        }
-                        if (project.JIBXBinding.skipBindValidation) {
-                            argList +="-s"
-                        }
-                        if (project.JIBXBinding.trackBranches) {
-                            argList +="-t"
-                        }
-                        if (project.JIBXBinding.testLoading) {
-                            argList +="-l"
-                        }
-                        argList.addAll(project.JIBXBinding.bindingFiles)
-                        main = 'org.jibx.binding.Compile'
-                        args = argList
-                        debug = false
-                        classpath = project.configurations.jibxRuntime.asFileTree + project.files(project.JIBXBinding.tempClassFolder)
-                        jvmArgs = project.JIBXBinding.jibxTaskJvmArgs
+                project.task(type: JavaExec, dependsOn: ['prepareJIBX','generateUnboundJar'], 'runJIBX') {
+                    //compute arguments
+                    ArrayList<String> argList = new ArrayList<>();
+                    if (project.JIBXBinding.verbose) {
+                        argList +="-v"
                     }
+                    if (project.JIBXBinding.verify) {
+                        argList +="-b"
+                    }
+                    if (project.JIBXBinding.overrideErrors) {
+                        argList +="-o"
+                    }
+                    if (project.JIBXBinding.skipBindValidation) {
+                        argList +="-s"
+                    }
+                    if (project.JIBXBinding.trackBranches) {
+                        argList +="-t"
+                    }
+                    if (project.JIBXBinding.testLoading) {
+                        argList +="-l"
+                    }
+                    argList.addAll(project.JIBXBinding.bindingFiles)
+                    main = 'org.jibx.binding.Compile'
+                    args = argList
+                    debug = false
+                    classpath = project.configurations.jibxRuntime.asFileTree + project.files(project.JIBXBinding.tempClassFolder)
+                    jvmArgs = project.JIBXBinding.jibxTaskJvmArgs
                 }
 
 
-                project.task('postJIBX').dependsOn('runJIBX') << {
-                    //copy instrumented classes back to output dir
-                    project.copy {
-                        from project.JIBXBinding.tempClassFolder
-                        into project.sourceSets.main.output.classesDir
-                        include project.JIBXBinding.rootAPIPath+'/**/*.*'
-                    }
+                project.task(type: Copy, dependsOn: 'runJIBX', 'postJIBX') {
+                    from project.JIBXBinding.tempClassFolder
+                    into project.sourceSets.main.output.classesDir
+                    include project.JIBXBinding.rootAPIPath+'/**/*.*'
                 }
 
-                def generateUnbindedJarTask = project.task(type: Jar, dependsOn: 'JIBXResources', 'generateUnbindedJar') {
+                def generateUnboundJar = project.task(type: Jar, dependsOn: 'JIBXResources', 'generateUnboundJar') {
                     appendix = 'nojibxbinding'
-                    if (project.JIBXBinding.unbindedJarName !=null) {
-                        archiveName = project.JIBXBinding.unbindedJarName
+                    if (project.JIBXBinding.unboundJarName !=null) {
+                        archiveName = project.JIBXBinding.unboundJarName
                     }
                     from project.sourceSets.main.output.files
                 }
 
-                generateUnbindedJarTask.onlyIf {
-                    project.JIBXBinding.generateUnbindedJar
+                generateUnboundJar.onlyIf {
+                    project.JIBXBinding.unboundJarName != null
                 }
                 // hooking JIBX on "classes" task from java plugin
                 project.getTasks().getByName('classes').dependsOn('postJIBX')
