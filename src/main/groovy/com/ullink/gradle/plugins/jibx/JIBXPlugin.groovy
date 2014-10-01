@@ -17,6 +17,14 @@ class JIBXPlugin implements Plugin<Project> {
         //force cleanup since incremental build on this plugin is not yet working well
         project.sourceSets.main.output.classesDir.deleteDir();
 
+        def generateUnboundJar = project.task(type: Jar, dependsOn: 'JIBXResources', 'generateUnboundJar') {
+            classifier = 'nojibxbinding'
+            if (project.JIBXBinding.unboundJarName !=null) {
+                archiveName = project.JIBXBinding.unboundJarName
+            }
+            from project.sourceSets.main.output.files
+        }
+
         project.configure(project) {
             afterEvaluate {
 
@@ -107,13 +115,6 @@ class JIBXPlugin implements Plugin<Project> {
                     include project.JIBXBinding.rootAPIPath+'/**/*.*'
                 }
 
-                def generateUnboundJar = project.task(type: Jar, dependsOn: 'JIBXResources', 'generateUnboundJar') {
-                    appendix = 'nojibxbinding'
-                    if (project.JIBXBinding.unboundJarName !=null) {
-                        archiveName = project.JIBXBinding.unboundJarName
-                    }
-                    from project.sourceSets.main.output.files
-                }
 
                 generateUnboundJar.onlyIf {
                     project.JIBXBinding.unboundJarName != null
