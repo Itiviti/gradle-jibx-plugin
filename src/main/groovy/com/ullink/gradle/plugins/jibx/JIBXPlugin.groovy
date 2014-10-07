@@ -19,9 +19,6 @@ class JIBXPlugin implements Plugin<Project> {
 
         def generateUnboundJar = project.task(type: Jar, dependsOn: 'JIBXResources', 'generateUnboundJar') {
             classifier = 'nojibxbinding'
-            if (project.JIBXBinding.unboundJarName !=null) {
-                archiveName = project.JIBXBinding.unboundJarName
-            }
             from project.sourceSets.main.output.files
         }
 
@@ -115,7 +112,9 @@ class JIBXPlugin implements Plugin<Project> {
                     include project.JIBXBinding.rootAPIPath+'/**/*.*'
                 }
 
-
+                if (project.JIBXBinding.unboundJarName) {
+                    archiveName = project.JIBXBinding.unboundJarName
+                }
                 generateUnboundJar.onlyIf {
                     project.JIBXBinding.unboundJarName != null
                 }
