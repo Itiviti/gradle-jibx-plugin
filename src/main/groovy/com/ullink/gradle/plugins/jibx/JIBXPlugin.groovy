@@ -112,12 +112,7 @@ class JIBXPlugin implements Plugin<Project> {
                     include project.JIBXBinding.rootAPIPath+'/**/*.*'
                 }
 
-                if (project.JIBXBinding.unboundJarName) {
-                    archiveName = project.JIBXBinding.unboundJarName
-                }
-                generateUnboundJar.onlyIf {
-                    project.JIBXBinding.unboundJarName != null
-                }
+                generateUnboundJar.onlyIf { project.JIBXBinding.archiveUnboundJar }
                 // hooking JIBX on "classes" task from java plugin
                 project.getTasks().getByName('classes').dependsOn('postJIBX')
 
