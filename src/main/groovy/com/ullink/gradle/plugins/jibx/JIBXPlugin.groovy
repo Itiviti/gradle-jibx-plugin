@@ -27,6 +27,7 @@ class JIBXPlugin implements Plugin<Project> {
 
                 project.JIBXBinding.bindingDir = new File(project.buildDir,JIBXPluginExtension.DEFAULT_BINDING_DIR)
                 project.JIBXBinding.tempClassFolder = new File(project.JIBXBinding.bindingDir,JIBXPluginExtension.TEMP_TARGET_DIR)
+                project.test.classpath = project.files(project.JIBXBinding.tempClassFolder) + project.test.classpath
 
                 project.task('JIBXResources') << {
                     project.JIBXBinding.bindingDir.mkdirs()
@@ -76,33 +77,14 @@ class JIBXPlugin implements Plugin<Project> {
 
                 }
 
-                project.task(type: JavaExec, dependsOn: ['prepareJIBX','generateUnboundJar'], 'runJIBX') {
-                    //compute arguments
-                    ArrayList<String> argList = new ArrayList<>();
-                    if (project.JIBXBinding.verbose) {
-                        argList +="-v"
-                    }
-                    if (project.JIBXBinding.verify) {
-                        argList +="-b"
-                    }
-                    if (project.JIBXBinding.overrideErrors) {
-                        argList +="-o"
-                    }
-                    if (project.JIBXBinding.skipBindValidation) {
-                        argList +="-s"
-                    }
-                    if (project.JIBXBinding.trackBranches) {
-                        argList +="-t"
-                    }
-                    if (project.JIBXBinding.testLoading) {
-                        argList +="-l"
-                    }
-                    argList.addAll(project.JIBXBinding.bindingFiles)
-                    main = 'org.jibx.binding.Compile'
-                    args = argList
-                    debug = false
-                    classpath = project.configurations.jibxRuntime.asFileTree + project.files(project.JIBXBinding.tempClassFolder)
-                    jvmArgs = project.JIBXBinding.jibxTaskJvmArgs
+                project.task(dependsOn: ['prepareJIBX','generateUnboundJar'], 'runJIBX') << {
+                    def ext = project.JIBXBinding
+                    def classpath = project.files(project.JIBXBinding.tempClassFolder) + project.configurations.jibxRuntime.asFileTree
+                    def classLoader = URLClassLoader.newInstance(classpath.collect { dep -> dep.toURI().toURL() } as URL[])
+                    def compilerClass = Class.forName('org.jibx.binding.Compile', true, classLoader)
+                    def compiler = compilerClass.newInstance(ext.verbose, ext.testLoading, ext.verify, ext.trackBranches, ext.overrideErrors)
+                    compiler.setSkipValidate(ext.skipBindValidation)
+                    compiler.compile(classpath.collect { dep -> dep.toString() } as String[], project.JIBXBinding.bindingFiles as String[])
                 }
 
 
@@ -113,8 +95,10 @@ class JIBXPlugin implements Plugin<Project> {
                 }
 
                 generateUnboundJar.onlyIf { project.JIBXBinding.archiveUnboundJar }
-                // hooking JIBX on "classes" task from java plugin
-                project.getTasks().getByName('classes').dependsOn('postJIBX')
+
+                // hooking JIBX on tasks from java plugin
+                project.getTasks().getByName('jar').dependsOn('postJIBX')
+                project.getTasks().getByName('test').dependsOn('postJIBX')
 
             }
         }
