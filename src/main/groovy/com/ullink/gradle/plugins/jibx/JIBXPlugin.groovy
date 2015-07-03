@@ -3,107 +3,67 @@ package com.ullink.gradle.plugins.jibx
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.bundling.Jar
 
 class JIBXPlugin implements Plugin<Project> {
+
     void apply(Project project) {
+        project.configurations.create('jibxCompile')
+        project.extensions.create('jibx', JIBXPluginExtension)
 
-        project.configurations.create('jibxBindingReference')
-        project.configurations.create('jibxRuntime').extendsFrom(project.configurations.jibxBindingReference)
-
-        project.extensions.create("JIBXBinding", JIBXPluginExtension)
-
-        //force cleanup since incremental build on this plugin is not yet working well
-        project.sourceSets.main.output.classesDir.deleteDir();
-
-        def generateUnboundJar = project.task(type: Jar, dependsOn: 'JIBXResources', 'generateUnboundJar') {
+        project.task('generateUnboundJar', dependsOn: 'classes', type: Jar) {
+            description 'Generates a JAR file without any JIBX binding.'
             classifier = 'nojibxbinding'
             from project.sourceSets.main.output.files
+            onlyIf { project.jibx.archiveUnboundJar }
         }
 
-        project.configure(project) {
-            afterEvaluate {
+        project.task('generateBindingsJar', dependsOn: 'processResources', type: Jar) {
+            description 'Generates a JAR file with only the XML bindings.'
+            classifier = 'bindings'
+            from project.sourceSets.main.output.resourcesDir
+            eachFile {
+                f -> f.path = new File(f.name)
+            }
+            onlyIf { project.jibx.archiveBindingsJar }
+        }
 
-                project.JIBXBinding.bindingDir = new File(project.buildDir,JIBXPluginExtension.DEFAULT_BINDING_DIR)
-                project.JIBXBinding.tempClassFolder = new File(project.JIBXBinding.bindingDir,JIBXPluginExtension.TEMP_TARGET_DIR)
-                project.test.classpath = project.files(project.JIBXBinding.tempClassFolder) + project.test.classpath
+        project.task('jibxDependencies', type: Copy) {
+            description 'Copies and extract all JIBX dependencies into a temporary directory.'
+            from { project.configurations.jibxCompile.collect{ project.zipTree(it) } }
+            from project.sourceSets.main.output.classesDir
+            into temporaryDir
+        }
 
-                project.task('JIBXResources') << {
-                    project.JIBXBinding.bindingDir.mkdirs()
-                    if (project.JIBXBinding.tempClassFolder.exists()) {
-                        project.JIBXBinding.tempClassFolder.deleteDir()
-                    }
-                    project.JIBXBinding.tempClassFolder.mkdirs()
-                    def jibxDir = new File(project.JIBXBinding.tempClassFolder,project.JIBXBinding.rootAPIPath+'/jibx')
-                    jibxDir.mkdirs()
-                }
+        project.task('jibxBindings', dependsOn: 'processResources', type: JIBXBindings) {
+            description 'Copies all JIBX bindings into a temporary directory.'
+            registerBindingsDirectory new File(project.sourceSets.main.output.resourcesDir, project.jibx.rootPath), '.'
+        }
 
-                project.task('prepareJIBX').dependsOn('JIBXResources') << {
-                    //copying binding configuration
-                    project.copy {
-                        from project.sourceSets.main.allSource
-                        println("copying binding configuration into $project.JIBXBinding.bindingDir.absolutePath")
-                        eachFile {
-                            details -> details.path = details.name
-                        }
-                        into project.JIBXBinding.bindingDir
-                        include '**/bindings/*.xml'
-                    }
+        project.task('compileJibx', dependsOn: ['jibxDependencies', 'jibxBindings', 'classes', 'generateUnboundJar', 'generateBindingsJar'], type: JIBXCompile) {
+            description 'Runs the JIBX compiler on the generated classes in a temporary directory.'
+            load project.jibx.testLoading
+            verbose project.jibx.verbose
+            verify project.jibx.verify
+            trackBranches project.jibx.trackBranches
+            errorOverride project.jibx.overrideErrors
+            skipValidate project.jibx.skipBindValidation
+            classPathFile project.jibxDependencies.temporaryDir
+            classPathFile project.jibxBindings.temporaryDir
+            classPathFiles project.jibx.classPathFiles
+            bindingFiles project.jibx.bindingFiles
+        }
 
-                    //copying binding dependencies
-                    project.copy {
-                        from project.configurations.jibxBindingReference.files.collect{project.zipTree(it)}
-                        into project.JIBXBinding.tempClassFolder
-                        include '**/*.*'
-                    }
-                    //copying classes to bind
-                    project.copy {
-                        from project.sourceSets.main.output.files
-                        into project.JIBXBinding.tempClassFolder
-                        include '**/*.*'
-                    }
-
-                    project.JIBXBinding.JIBXExternalJars.each {
-                        path,jar ->
-                            def pathBinding = new File(project.JIBXBinding.bindingDir,path)
-                            pathBinding.mkdirs();
-                            project.copy {
-                                from project.configurations.jibxRuntime.files.findAll{it.name.matches(".*$jar.*")}.collect{project.zipTree(it)}.files
-                                into pathBinding;
-                                include '**/*.xml'
-                            }
-                    }
-
-                }
-
-                project.task(dependsOn: ['prepareJIBX','generateUnboundJar'], 'runJIBX') << {
-                    def ext = project.JIBXBinding
-                    def classpath = project.files(project.JIBXBinding.tempClassFolder) + project.configurations.jibxRuntime.asFileTree
-                    def classLoader = URLClassLoader.newInstance(classpath.collect { dep -> dep.toURI().toURL() } as URL[])
-                    def compilerClass = Class.forName('org.jibx.binding.Compile', true, classLoader)
-                    def compiler = compilerClass.newInstance(ext.verbose, ext.testLoading, ext.verify, ext.trackBranches, ext.overrideErrors)
-                    compiler.setSkipValidate(ext.skipBindValidation)
-                    compiler.compile(classpath.collect { dep -> dep.toString() } as String[], project.JIBXBinding.bindingFiles as String[])
-                }
-
-
-                project.task(type: Copy, dependsOn: 'runJIBX', 'postJIBX') {
-                    from project.JIBXBinding.tempClassFolder
-                    into project.sourceSets.main.output.classesDir
-                    include project.JIBXBinding.rootAPIPath+'/**/*.*'
-                }
-
-                generateUnboundJar.onlyIf { project.JIBXBinding.archiveUnboundJar }
-
-                // hooking JIBX on tasks from java plugin
-                project.getTasks().getByName('jar').dependsOn('postJIBX')
-                project.getTasks().getByName('test').dependsOn('postJIBX')
-
+        project.task('collectJibx', dependsOn: 'compileJibx', type:Copy) {
+            description 'Copies the compiled JIBX files back into the generated classes directory.'
+            from project.jibxDependencies.temporaryDir
+            into project.sourceSets.main.output.classesDir
+            project.afterEvaluate {
+                include project.jibx.rootPath + '/**/*.*'
             }
         }
 
-
-
+        project.classes.finalizedBy project.collectJibx
     }
+
 }

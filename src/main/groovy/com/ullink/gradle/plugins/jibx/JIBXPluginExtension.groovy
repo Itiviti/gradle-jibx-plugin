@@ -2,26 +2,18 @@ package com.ullink.gradle.plugins.jibx
 
 class JIBXPluginExtension {
 
-    static final String DEFAULT_BINDING_DIR = 'bindings'
-    static final String TEMP_TARGET_DIR = 'tmp'
+    String rootPath = ''
+    List<File> bindingFiles = []
+    List<File> classPathFiles = []
 
-    def String rootAPIPath = 'undefined'
-    def List<String> bindingFiles = []
-    def File bindingDir
-    def File tempClassFolder
-    def List<String> jibxTaskJvmArgs =[]
-    def boolean verbose = false
-    def boolean verify = false
-    def boolean overrideErrors = false
-    def boolean skipBindValidation = false
-    def boolean trackBranches = false
-    def boolean testLoading = false
-    def boolean archiveUnboundJar = false
+    boolean verbose = false
+    boolean verify = false
+    boolean overrideErrors = false
+    boolean skipBindValidation = false
+    boolean trackBranches = false
+    boolean testLoading = false
 
-    def Map<String, String> JIBXExternalJars = new HashMap<>();
-
-    void externalDependencyMapping(String jarName, String refId) {
-        JIBXExternalJars.put(refId,jarName);
-    }
+    boolean archiveUnboundJar = false
+    boolean archiveBindingsJar = false
 
 }
