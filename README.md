@@ -29,7 +29,7 @@ dependencies {
             // Use the latest release of BCEL for Java 6/7.
             [group: 'org.apache.bcel', name: 'bcel', version: '5.2'],
             // Use the next version of BCEL for Java 8.
-            [group: 'org.apache.bcel', name: 'bcel', version: '6.0-SNAPSHOT'],
+            // [group: 'org.apache.bcel', name: 'bcel', version: '6.0-SNAPSHOT'],
     )
 }
 ```
@@ -50,10 +50,10 @@ hook yourself on ont of the following sub tasks for a more complex workflow:
 
 - `jibxDependencies` will extract all your jibx dependencies (by default only
 the JIBX library itself and your sources) in order to pass it to the compiler
-as a classpath. If you need to add more dependencies, extract them into
-`jibxDependencies.temporaryDir`.
+as a classpath. If you need to add more dependencies, add them to this Copy
+task.
 - `jibxBindings` will copy all your JIBX mappings into a temporary directory
 (by default only the XML files found in the bindings directory of your
 sources). This will enable you to reference multiple files in your bindings.
-If you need to reference mappings from third party libraries, extract them
-into `jibxBindings.temporaryDir`.
+If you need to reference mappings from third party libraries, reference them
+using `registerBindingsDirectory` and `registerBindingsArchive`.

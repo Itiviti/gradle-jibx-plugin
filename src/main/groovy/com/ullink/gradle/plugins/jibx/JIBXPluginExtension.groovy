@@ -12,6 +12,8 @@ class JIBXPluginExtension {
     boolean skipBindValidation = false
     boolean trackBranches = false
     boolean testLoading = false
+
     boolean archiveUnboundJar = false
+    boolean archiveBindingsJar = false
 
 }
