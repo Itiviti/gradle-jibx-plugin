@@ -2,6 +2,7 @@ package com.ullink.gradle.plugins.jibx
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.TaskExecutionException
 
 /**
  * A Gradle interface to the JIBX compiler.
@@ -60,10 +61,29 @@ class JIBXCompile extends DefaultTask {
     @TaskAction
     def compile() {
         def classLoader = URLClassLoader.newInstance(classPathFiles.collect { it -> it.toURI().toURL() } as URL[])
-        def compilerClass = Class.forName('org.jibx.binding.Compile', true, classLoader)
-        def compiler = compilerClass.newInstance(verbose, load, verify, trackBranches, errorOverride)
-        compiler.skipValidate = skipValidate
-        compiler.compile(classPathFiles as String[], bindingFiles as String[])
+        def compilerClass
+        def exceptionClass
+        try {
+            compilerClass = Class.forName('org.jibx.binding.Compile', true, classLoader)
+            exceptionClass = Class.forName('org.jibx.runtime.JiBXException', true, classLoader)
+        }
+        catch (ClassNotFoundException e) {
+            logger.warn("Could not compile JIBX bindings because no JIBX compiler was found in your classpath. Make sure you reference one in the task classpath, for example in the jibxCompile configuration.")
+            throw new TaskExecutionException(this, e)
+        }
+
+        try {
+            def compiler = compilerClass.newInstance(verbose, load, verify, trackBranches, errorOverride)
+            compiler.skipValidate = skipValidate
+            compiler.compile(classPathFiles as String[], bindingFiles as String[])
+        }
+        catch (Exception e) {
+            if (exceptionClass.isInstance(e) && e.getRootCause() != null) {
+                logger.warn("An exception occurred during the JIBX compilation: " + e.message)
+                throw e.getRootCause()
+            }
+            throw new TaskExecutionException(this, e)
+        }
     }
 
 }
