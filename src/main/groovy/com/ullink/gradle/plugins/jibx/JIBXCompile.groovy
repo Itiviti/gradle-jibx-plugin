@@ -4,6 +4,8 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskExecutionException
 
+import java.lang.reflect.Constructor
+
 /**
  * A Gradle interface to the JIBX compiler.
  */
@@ -73,7 +75,14 @@ class JIBXCompile extends DefaultTask {
         }
 
         try {
-            def compiler = compilerClass.newInstance(verbose, load, verify, trackBranches, errorOverride)
+            Constructor<?> constructor = compilerClass.getDeclaredConstructors()[0]
+            def compiler;
+            if (constructor.parameterTypes.length == 5) {
+                compiler = compilerClass.newInstance(verbose, load, verify, trackBranches, errorOverride)
+            } else {
+                //from version 1.2.5 of JibX, constructor has two verbose switches (and so one more parameter)
+                compiler = compilerClass.newInstance(verbose, verbose, load, verify, trackBranches, errorOverride)
+            }
             compiler.skipValidate = skipValidate
             compiler.compile(classPathFiles as String[], bindingFiles as String[])
         }
