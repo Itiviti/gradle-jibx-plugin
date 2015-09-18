@@ -75,7 +75,7 @@ class JIBXCompile extends DefaultTask {
         }
 
         try {
-            Constructor<?> constructor = compilerClass.getDeclaredConstructors()[0]
+            Constructor<?> constructor = compilerClass.getDeclaredConstructors()[1]
             def compiler;
             if (constructor.parameterTypes.length == 5) {
                 compiler = compilerClass.newInstance(verbose, load, verify, trackBranches, errorOverride)
