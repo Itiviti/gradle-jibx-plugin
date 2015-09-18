@@ -75,13 +75,14 @@ class JIBXCompile extends DefaultTask {
         }
 
         try {
-            Constructor<?> constructor = compilerClass.getDeclaredConstructors()[1]
             def compiler;
-            if (constructor.parameterTypes.length == 5) {
-                compiler = compilerClass.newInstance(verbose, load, verify, trackBranches, errorOverride)
-            } else {
+            try {
                 //from version 1.2.5 of JibX, constructor has two verbose switches (and so one more parameter)
+                Constructor<?> constructor = compilerClass.getDeclaredConstructor(Boolean.class, Boolean.class, Boolean.class, Boolean.class, Boolean.class, Boolean.class)
                 compiler = compilerClass.newInstance(verbose, verbose, load, verify, trackBranches, errorOverride)
+            }
+            catch (NoSuchMethodException) {
+                compiler = compilerClass.newInstance(verbose, load, verify, trackBranches, errorOverride)
             }
             compiler.skipValidate = skipValidate
             compiler.compile(classPathFiles as String[], bindingFiles as String[])
