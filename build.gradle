@@ -1,17 +1,36 @@
+plugins {
+    id 'nu.studer.plugindev' version '1.0.4'
+    id "com.jfrog.bintray" version "1.2"
+}
+
 apply plugin: 'groovy'
-apply plugin: 'maven'
 
 group = 'com.ullink.gradle'
-version = '0.12-SNAPSHOT'
+version = '0.12'
 description 'Gradle plugin for JIBX bindings compilation'
-
-install {
-    repositories.mavenInstaller {
-        pom.artifactId = 'gradle-jibx-plugin'
-    }
-}
 
 dependencies {
     compile gradleApi()
     compile localGroovy()
+}
+
+bintray {
+    pkg.repo = 'gradle-plugins'
+    pkg.version.gpg.sign = true
+    pkg.userOrg = 'ullink'
+}
+
+plugindev {
+    pluginId 'com.ullink.jibx'
+    pluginName 'com.ullink.jibx:gradle-jibx-plugin'
+    pluginImplementationClass 'com.ullink.gradle.plugins.jibx.JIBXPlugin'
+    pluginDescription project.description
+    pluginLicenses 'Apache-2.0'
+    pluginTags 'gradle', 'plugin', 'jibx', 'xml'
+    authorId 'bcorne'
+    authorName 'Benoit Corne'
+    authorEmail 'benoit.corne@gmail.com'
+    projectUrl "https://github.com/Ullink/${project.name}"
+    projectInceptionYear '2014'
+    done()
 }
