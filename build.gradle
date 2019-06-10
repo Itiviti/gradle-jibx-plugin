@@ -1,12 +1,11 @@
 plugins {
-    id 'nu.studer.plugindev' version '1.0.4'
-    id "com.jfrog.bintray" version "1.2"
+    id 'nu.studer.plugindev' version '1.0.12'
+    id "com.jfrog.bintray" version "1.8.4"
 }
 
 apply plugin: 'groovy'
 
 group = 'com.ullink.gradle'
-version = '0.12'
 description 'Gradle plugin for JIBX bindings compilation'
 
 dependencies {
