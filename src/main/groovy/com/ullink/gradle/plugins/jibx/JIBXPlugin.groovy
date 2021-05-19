@@ -14,7 +14,7 @@ class JIBXPlugin implements Plugin<Project> {
         def output = project.sourceSets.main.output
         def mainClassesDirs
         if (output.hasProperty('classesDirs')) {
-            mainClassesDirs = output.classesDirs
+            mainClassesDirs = output.classesDirs.getSingleFile()
         } else {
             mainClassesDirs = output.classesDir
         }
