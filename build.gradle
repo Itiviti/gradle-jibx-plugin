@@ -1,6 +1,6 @@
 plugins {
     id 'nu.studer.plugindev' version '1.0.12'
-    id "com.jfrog.bintray" version "1.8.4"
+    id 'com.gradle.plugin-publish' version '0.14.0'
 }
 
 apply plugin: 'groovy'
@@ -19,17 +19,24 @@ bintray {
     pkg.userOrg = 'ullink'
 }
 
-plugindev {
-    pluginId 'com.ullink.jibx'
-    pluginName 'com.ullink.jibx:gradle-jibx-plugin'
-    pluginImplementationClass 'com.ullink.gradle.plugins.jibx.JIBXPlugin'
-    pluginDescription project.description
-    pluginLicenses 'Apache-2.0'
-    pluginTags 'gradle', 'plugin', 'jibx', 'xml'
-    authorId 'bcorne'
-    authorName 'Benoit Corne'
-    authorEmail 'benoit.corne@gmail.com'
-    projectUrl "https://github.com/Ullink/${project.name}"
-    projectInceptionYear '2014'
-    done()
+gradlePlugin {
+  plugins {
+    jibxPlugin {
+      id = 'com.ullink.jibx'
+      description = description
+      implementationClass = 'com.ullink.gradle.plugins.jibx.JIBXPlugin'
+    }
+  }
+}
+
+pluginBundle {
+  website = 'https://github.com/Itiviti/gradle-jibx-plugin'
+  vcsUrl = 'https://github.com/Itiviti/gradle-jibx-plugin'
+  tags = ['jibx', 'xml']
+
+  plugins {
+    jibxPlugin {
+      displayName = 'Gradle jibx plugin'
+    }
+  }
 }
