@@ -1,9 +1,10 @@
 plugins {
-    id 'nu.studer.plugindev' version '1.0.12'
-    id 'com.gradle.plugin-publish' version '0.14.0'
+    id 'com.gradle.plugin-publish' version '0.15.0'
+    id 'java-gradle-plugin'
 }
 
 apply plugin: 'groovy'
+apply plugin: 'com.gradle.plugin-publish'
 
 group = 'com.ullink.gradle'
 description 'Gradle plugin for JIBX bindings compilation'
@@ -13,30 +14,23 @@ dependencies {
     compile localGroovy()
 }
 
-bintray {
-    pkg.repo = 'gradle-plugins'
-    pkg.version.gpg.sign = true
-    pkg.userOrg = 'ullink'
+pluginBundle {
+    website = 'https://github.com/Itiviti/gradle-jibx-plugin'
+    vcsUrl = 'https://github.com/Itiviti/gradle-jibx-plugin'
+    tags = ['jibx', 'xml']
+
+    mavenCoordinates {
+        groupId = 'com.ullink.gradle'
+    }
 }
 
 gradlePlugin {
-  plugins {
-    jibxPlugin {
-      id = 'com.ullink.jibx'
-      description = description
-      implementationClass = 'com.ullink.gradle.plugins.jibx.JIBXPlugin'
+    plugins {
+        jibxPlugin {
+            id = 'com.ullink.jibx'
+            description = project.description
+            displayName = 'Gradle JIBX Plugin'
+            implementationClass = 'com.ullink.gradle.plugins.jibx.JIBXPlugin'
+        }
     }
-  }
-}
-
-pluginBundle {
-  website = 'https://github.com/Itiviti/gradle-jibx-plugin'
-  vcsUrl = 'https://github.com/Itiviti/gradle-jibx-plugin'
-  tags = ['jibx', 'xml']
-
-  plugins {
-    jibxPlugin {
-      displayName = 'Gradle jibx plugin'
-    }
-  }
 }
