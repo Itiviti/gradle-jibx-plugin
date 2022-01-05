@@ -1,5 +1,5 @@
 plugins {
-    id 'com.gradle.plugin-publish' version '0.15.0'
+    id 'com.gradle.plugin-publish' version '0.19.0'
     id 'java-gradle-plugin'
 }
 
@@ -10,8 +10,7 @@ group = 'com.ullink.gradle'
 description 'Gradle plugin for JIBX bindings compilation'
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
+    api gradleApi()
 }
 
 pluginBundle {

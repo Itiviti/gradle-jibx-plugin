@@ -1,11 +1,15 @@
 package com.ullink.gradle.plugins.jibx
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 
 class JIBXBindings extends DefaultTask {
 
+    @Internal
     Map directories = [:]
+
+    @Internal
     Map archives = [:]
 
     def registerBindingsDirectory(def directory, def output) {
