@@ -75,7 +75,7 @@ class JIBXCompile extends DefaultTask {
         }
 
         try {
-            def compiler;
+            def compiler
             try {
                 //from version 1.2.5 of JibX, constructor has two verbose switches (and so one more parameter)
                 Constructor<?> constructor = compilerClass.getDeclaredConstructor(boolean, boolean, boolean, boolean, boolean, boolean)
